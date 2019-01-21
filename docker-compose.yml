@@ -1,0 +1,35 @@
+version: "3"
+
+services:
+  registry:
+    image: "consul:latest"
+    ports:
+      - "8500:8500"
+    restart: always
+
+  musicians-service:
+    image: "simple-music/musicians-service"
+    depends_on:
+      - registry
+      - musicians-storage
+    environment:
+      - SIMPLE_MUSIC_REGISTRY_HOST=registry
+      - SIMPLE_MUSIC_REGISTRY_PORT=8500
+      - SIMPLE_MUSIC_MUSICIANS_STORAGE_HOST=musicians-storage
+      - SIMPLE_MUSIC_MUSICIANS_STORAGE_PORT=27017
+    restart: always
+
+  musicians-storage:
+    image: "mongo:latest"
+    depends_on:
+      - registry
+    restart: always
+
+  avatars-service:
+    image: "simple-music/avatars-service"
+    depends_on:
+      - registry
+    environment:
+      - SIMPLE_MUSIC_REGISTRY_HOST=registry
+      - SIMPLE_MUSIC_REGISTRY_PORT=8500
+    restart: always
