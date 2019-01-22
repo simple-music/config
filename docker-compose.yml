@@ -1,19 +1,65 @@
 version: "3"
 
 services:
-  registry:
+  gateway:
+    image: "simple-music/auth-service"
+    depends_on:
+      - service-discovery
+      - auth-service
+      - musicians-service
+      - subscriptions-service
+      - avatars-service
+    environment:
+      - SIMPLE_MUSIC_REGISTRY_HOST=service-discovery
+      - SIMPLE_MUSIC_REGISTRY_PORT=8500
+    ports:
+      - "8500:80"
+    restart: always
+
+  service-discovery:
     image: "consul:latest"
     ports:
       - "8500:8500"
     restart: always
 
+  auth-service:
+    image: "simple-music/auth-service"
+    depends_on:
+      - service-discovery
+      - credentials-storage
+      - sessions-storage
+    environment:
+      - SIMPLE_MUSIC_REGISTRY_HOST=service-discovery
+      - SIMPLE_MUSIC_REGISTRY_PORT=8500
+      - SIMPLE_MUSIC_CREDENTIALS_STORAGE_HOST=credentials-storage
+      - SIMPLE_MUSIC_CREDENTIALS_STORAGE_PORT=5432
+      - SIMPLE_MUSIC_SESSIONS_STORAGE_HOST=sessions-storage
+      - SIMPLE_MUSIC_SESSIONS_STORAGE_PORT=6379
+    restart: always
+
+  credentials-storage:
+    image: "postgres:latest"
+    depends_on:
+      - service-discovery
+    environment:
+      - POSTGRES_DB=credentials
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=secret
+    restart: always
+
+  sessions-storage:
+    image: "redis:latest"
+    depends_on:
+      - service-discovery
+    restart: always
+
   musicians-service:
     image: "simple-music/musicians-service"
     depends_on:
-      - registry
+      - service-discovery
       - musicians-storage
     environment:
-      - SIMPLE_MUSIC_REGISTRY_HOST=registry
+      - SIMPLE_MUSIC_REGISTRY_HOST=service-discovery
       - SIMPLE_MUSIC_REGISTRY_PORT=8500
       - SIMPLE_MUSIC_MUSICIANS_STORAGE_HOST=musicians-storage
       - SIMPLE_MUSIC_MUSICIANS_STORAGE_PORT=27017
@@ -22,14 +68,36 @@ services:
   musicians-storage:
     image: "mongo:latest"
     depends_on:
-      - registry
+      - service-discovery
+    restart: always
+
+  subscriptions-service:
+    image: "simple-music/subscriptions-service"
+    depends_on:
+      - service-discovery
+      - musicians-storage
+    environment:
+      - SIMPLE_MUSIC_REGISTRY_HOST=service-discovery
+      - SIMPLE_MUSIC_REGISTRY_PORT=8500
+      - SIMPLE_MUSIC_SUBSCRIPTIONS_STORAGE_HOST=subscriptions-storage
+      - SIMPLE_MUSIC_SUBSCRIPTIONS_STORAGE_HOST=5432
+    restart: always
+
+  subscriptions-storage:
+    image: "postgres:latest"
+    depends_on:
+      - service-discovery
+    environment:
+      - POSTGRES_DB=subscriptions
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=secret
     restart: always
 
   avatars-service:
     image: "simple-music/avatars-service"
     depends_on:
-      - registry
+      - service-discovery
     environment:
-      - SIMPLE_MUSIC_REGISTRY_HOST=registry
+      - SIMPLE_MUSIC_REGISTRY_HOST=service-discovery
       - SIMPLE_MUSIC_REGISTRY_PORT=8500
     restart: always
