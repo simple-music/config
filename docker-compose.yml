@@ -2,7 +2,7 @@ version: "3"
 
 services:
   gateway:
-    image: "simple-music/auth-service"
+    image: "simple-music/gateway"
     depends_on:
       - service-discovery
       - auth-service
@@ -13,7 +13,7 @@ services:
       - SIMPLE_MUSIC_REGISTRY_HOST=service-discovery
       - SIMPLE_MUSIC_REGISTRY_PORT=8500
     ports:
-      - "8500:80"
+      - "8000:80"
     restart: always
 
   service-discovery:
@@ -80,7 +80,7 @@ services:
       - SIMPLE_MUSIC_REGISTRY_HOST=service-discovery
       - SIMPLE_MUSIC_REGISTRY_PORT=8500
       - SIMPLE_MUSIC_SUBSCRIPTIONS_STORAGE_HOST=subscriptions-storage
-      - SIMPLE_MUSIC_SUBSCRIPTIONS_STORAGE_HOST=5432
+      - SIMPLE_MUSIC_SUBSCRIPTIONS_STORAGE_PORT=5432
     restart: always
 
   subscriptions-storage:
